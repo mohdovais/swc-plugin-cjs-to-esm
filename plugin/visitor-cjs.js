@@ -1,25 +1,33 @@
 const { Visitor } = require("@swc/core/Visitor");
+const crypto = require("crypto")
 const {
   createCallExpression,
   createStringLiteralStatement,
   createExportAllDeclaration,
+  createExportDefaultModuleDotExports,
+  createImportDefaultExpression,
+  createImporterFunction,
+  createVerifiedVariableDeclaration,
+  createExportDeclaration,
+  createExportDefaultObjectExpression,
+  createSpan,
+  createIdentifier,
 } = require("./create");
 
-const randomId = () => "_" + performance.now().toString(32);
+const randomId = () => "_" + crypto.randomBytes(4).toString("hex");
 
-const createSpan = ({ start = 0, end = 0, ctxt = 0 } = {}) => ({
-  start,
-  end,
-  ctxt,
-});
 
 class CommonJSVisitor extends Visitor {
   _exportNames = [];
   _exportDeclarations = new Map();
-  _requireURL = [];
-  _requireName = [];
+  _requireURLs = [];
+  _requireNames = [];
   _hasModuleDotExports = false;
   _exportAllDeclarations = new Map();
+
+  visitProgram(program) {
+    return this.updatePoregramTree(super.visitProgram(program));
+  }
 
   /**
    *
@@ -31,19 +39,24 @@ class CommonJSVisitor extends Visitor {
 
     if (callee === "require" && expression.arguments.length === 1) {
       const url = expression.arguments[0].expression.value;
-      const name = url.split(/[\.\/\\-]/g).join("_");
+      const index = this._requireURLs.indexOf(url);
+      let name;
 
-      this._requireURL.push(url);
-      this._requireName.push(name);
+      if (index === -1) {
+        name = url.split(/[\.\/\\-]/g).join("_") + randomId();
+        this._requireURLs.push(url);
+        this._requireNames.push(name);
+      } else {
+        name = this._requireNames[index];
+      }
 
-      return createCallExpression("get_" + name);
+      return createIdentifier(name);
     }
 
     return expression;
   }
 
   /**
-   * Remove "use strict"
    *
    * @param {import("@swc/core").ExpressionStatement} statement
    * @returns {import("@swc/core").Statement}
@@ -109,6 +122,56 @@ class CommonJSVisitor extends Visitor {
     }
 
     return statement;
+  }
+
+  /**
+   *
+   * @param {import("@swc/core").Program} program
+   * @returns {import("@swc/core").Program}
+   */
+  updatePoregramTree(program) {
+    const imports = [];
+    const importGetters = [];
+    const variables = [];
+    const exports = [];
+
+    this._requireNames.forEach((name, i) => {
+      imports.push(createImportDefaultExpression(name, this._requireURLs[i]));
+      importGetters.push(createImporterFunction("get_" + name, name));
+    });
+
+    if (this._hasModuleDotExports) {
+      variables.push(createVerifiedVariableDeclaration("module"));
+    }
+
+    if (this._exportNames.length > 0) {
+      variables.push(createVerifiedVariableDeclaration("exports"));
+    }
+
+    if (this._hasModuleDotExports) {
+      exports.push(createExportDefaultModuleDotExports());
+    } else if (this._exportNames.length > 0) {
+      exports.push(createExportDefaultObjectExpression(this._exportNames));
+    }
+
+    const body = program.body.map((statement) => {
+      const literal =
+        statement.type === "ExpressionStatement" &&
+        statement.expression &&
+        statement.expression.type === "StringLiteral" &&
+        statement.expression.value;
+
+      if (literal !== false && this._exportDeclarations.has(literal)) {
+        const { name, init } = this._exportDeclarations.get(literal);
+        return createExportDeclaration(name, init);
+      }
+
+      return statement;
+    });
+
+    program.body = imports.concat(variables, importGetters, body, exports);
+
+    return program;
   }
 }
 

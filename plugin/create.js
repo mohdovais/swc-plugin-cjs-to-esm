@@ -26,6 +26,19 @@ const createSpan = ({ start = 0, end = 0, ctxt = 0 } = {}) => ({
 
 /**
  *
+ * @param {string} name
+ * @returns {import("@swc/core").Identifier}
+ */
+function createIdentifier(name) {
+  return {
+    type: "Identifier",
+    span: createSpan(),
+    value: name,
+  };
+}
+
+/**
+ *
  * @param {string} url
  * @returns {ExportAllDeclaration}
  */
@@ -111,6 +124,19 @@ function createExportDefaultExpression(expression) {
 
 /**
  *
+ * @param {string} value
+ * @returns {import("@swc/core").StringLiteral}
+ */
+function createStringLiteral(value) {
+  return {
+    type: "StringLiteral",
+    span: createSpan(),
+    value,
+  };
+}
+
+/**
+ *
  * @param {string} literal
  * @returns {ExpressionStatement}
  */
@@ -118,11 +144,7 @@ function createStringLiteralStatement(literal) {
   return {
     type: "ExpressionStatement",
     span: createSpan(),
-    expression: {
-      type: "StringLiteral",
-      span: createSpan(),
-      value: literal,
-    },
+    expression: createStringLiteral(literal),
   };
 }
 
@@ -302,6 +324,8 @@ function createVerifiedVariableDeclaration(name) {
 
 module.exports = {
   createSpan,
+  createIdentifier,
+  createStringLiteral,
   createVariableDeclaration,
   createCallExpression,
   createExportDefaultExpression,
