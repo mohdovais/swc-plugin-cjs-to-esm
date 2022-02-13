@@ -1,0 +1,15 @@
+{
+  "name": "swc-playground",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@swc/core": "^1.2.138",
+    "react": "^17.0.2"
+  }
+}
