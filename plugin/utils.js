@@ -2,32 +2,44 @@
 
 const toString = Object.prototype.toString;
 
+/**
+ *
+ * @param {*} objectA
+ * @param {*} objectB
+ * @returns {boolean}
+ */
 function isEqual(objectA, objectB) {
-  if (objectA !== objectB) {
-    if (toString.call(objectA) !== toString.call(objectB)) {
-      return false;
-    }
+  if (objectA === objectB) {
+    return true;
+  }
 
-    if (Array.isArray(objectA)) {
-      for (let i = 0, length = objectA.length; i < length; i++) {
-        if (!isEqual(objectA[i], objectB[i])) {
-          return false;
-        }
+  if (toString.call(objectA) !== toString.call(objectB)) {
+    return false;
+  }
+
+  if (typeof objectA === "object") {
+    const aKeys = Object.keys(objectA);
+    const bKeys = Object.keys(objectB);
+
+    for (let i = 0, length = aKeys.length; i < length; i++) {
+      const key = aKeys[i];
+      if (key !== "span" && !isEqual(objectA[key], objectB[key])) {
+        return false;
       }
     }
 
-    if (typeof objectA === "object") {
-      const keys = Object.keys(objectA);
-      for (let i = 0, length = keys.length; i < length; i++) {
-        const key = keys[i];
+    if (aKeys.length !== bKeys.length) {
+      for (let i = 0, length = aKeys.length; i < length; i++) {
+        const key = bKeys[i];
         if (key !== "span" && !isEqual(objectA[key], objectB[key])) {
           return false;
         }
       }
     }
-  }
 
-  return true;
+    return true;
+  }
+  return false;
 }
 
 module.exports = { isEqual };

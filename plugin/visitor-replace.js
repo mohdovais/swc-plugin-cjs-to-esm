@@ -9,10 +9,7 @@ const replace = parse(JSON.stringify("development"));
 
 class ReplaceVisitor extends Visitor {
   visitMemberExpression(expression) {
-    if (isEqual(expression, find)) {
-      return replace;
-    }
-    return expression;
+    return isEqual(expression, find) ? replace : expression;
   }
 }
 
