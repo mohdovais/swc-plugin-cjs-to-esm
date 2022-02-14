@@ -1,27 +1,26 @@
 const { Visitor } = require("@swc/core/Visitor");
-const crypto = require("crypto")
+const crypto = require("crypto");
 const {
-  createCallExpression,
   createStringLiteralStatement,
   createExportAllDeclaration,
   createExportDefaultModuleDotExports,
   createImportDefaultExpression,
-  createImporterFunction,
-  createVerifiedVariableDeclaration,
-  createExportDeclaration,
   createExportDefaultObjectExpression,
+  createExportDeclaration,
   createSpan,
   createIdentifier,
+  createAssignmentExpressionStatement,
+  createVariableDeclaration,
 } = require("./create");
 
 const randomId = () => "_" + crypto.randomBytes(4).toString("hex");
 
-
 class CommonJSVisitor extends Visitor {
-  _exportNames = [];
+  _exportDeclarationNames = new Map();
   _exportDeclarations = new Map();
   _requireURLs = [];
   _requireNames = [];
+
   _hasModuleDotExports = false;
   _exportAllDeclarations = new Map();
 
@@ -106,12 +105,14 @@ class CommonJSVisitor extends Visitor {
       expression.left.property
     ) {
       const exportName = expression.left.property.value;
-
-      if (!this._exportNames.includes(exportName)) {
-        this._exportNames.push(exportName);
-      }
-
       const placeholder = exportName + randomId();
+
+      this._exportDeclarationNames.set(
+        exportName,
+        this._exportDeclarationNames.has(exportName)
+          ? this._exportDeclarationNames.get(exportName) + 1
+          : 1
+      );
 
       this._exportDeclarations.set(placeholder, {
         name: exportName,
@@ -131,27 +132,21 @@ class CommonJSVisitor extends Visitor {
    */
   updatePoregramTree(program) {
     const imports = [];
-    const importGetters = [];
     const variables = [];
     const exports = [];
 
     this._requireNames.forEach((name, i) => {
       imports.push(createImportDefaultExpression(name, this._requireURLs[i]));
-      importGetters.push(createImporterFunction("get_" + name, name));
     });
 
     if (this._hasModuleDotExports) {
-      variables.push(createVerifiedVariableDeclaration("module"));
-    }
-
-    if (this._exportNames.length > 0) {
-      variables.push(createVerifiedVariableDeclaration("exports"));
-    }
-
-    if (this._hasModuleDotExports) {
-      exports.push(createExportDefaultModuleDotExports());
-    } else if (this._exportNames.length > 0) {
-      exports.push(createExportDefaultObjectExpression(this._exportNames));
+      exports.push(createExportDefaultModuleDotExports()); // @revist
+    } else if (this._exportDeclarationNames.size > 0) {
+      exports.push(
+        createExportDefaultObjectExpression(
+          Array.from(this._exportDeclarationNames.keys())
+        )
+      );
     }
 
     const body = program.body.map((statement) => {
@@ -163,13 +158,22 @@ class CommonJSVisitor extends Visitor {
 
       if (literal !== false && this._exportDeclarations.has(literal)) {
         const { name, init } = this._exportDeclarations.get(literal);
-        return createExportDeclaration(name, init);
+
+        const count = this._exportDeclarationNames.get(name);
+
+        if (count === 1) {
+          return createExportDeclaration(name, init);
+        } else {
+          variables.push(createVariableDeclaration(name, null));
+          exports.push(createExportDeclaration(name, null));
+          return createAssignmentExpressionStatement(name, init);
+        }
       }
 
       return statement;
     });
 
-    program.body = imports.concat(variables, importGetters, body, exports);
+    program.body = imports.concat(variables, body, exports);
 
     return program;
   }

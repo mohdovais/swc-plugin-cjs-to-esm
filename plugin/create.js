@@ -39,6 +39,32 @@ function createIdentifier(name) {
 
 /**
  *
+ * @param {string} name
+ * @param {Expression} value
+ * @returns {ExpressionStatement}
+ */
+function createAssignmentExpressionStatement(name, value) {
+  return {
+    type: "ExpressionStatement",
+    span: createSpan(),
+    expression: {
+      type: "AssignmentExpression",
+      span: createSpan(),
+      operator: "=",
+      left: {
+        type: "Identifier",
+        span: createSpan(),
+        value: name,
+        optional: false,
+        typeAnnotation: null,
+      },
+      right: value,
+    },
+  };
+}
+
+/**
+ *
  * @param {string} url
  * @returns {ExportAllDeclaration}
  */
@@ -327,6 +353,7 @@ module.exports = {
   createIdentifier,
   createStringLiteral,
   createVariableDeclaration,
+  createAssignmentExpressionStatement,
   createCallExpression,
   createExportDefaultExpression,
   createExportDeclaration,

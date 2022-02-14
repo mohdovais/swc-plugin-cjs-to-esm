@@ -29,7 +29,7 @@ module.exports = (program) => {
     cjsVisitor.visitProgram.bind(cjsVisitor),
   ].reduce((prog, fn) => fn(prog), program);
 
-  require("fs").writeFileSync("./ast.json", JSON.stringify(result));
+  require("fs").writeFileSync("./ast.json", JSON.stringify(result, null, 4));
 
   return result;
 };
