@@ -32,10 +32,10 @@ const getValue = (expression) => {
     case "BooleanLiteral":
       return expression.value;
     case "Identifier":
-      if ((value = expression.value === "undefined")) {
+      if (expression.value === "undefined") {
         return undefined;
       }
-      break;
+      return UNKOWN;
     case "NullLiteral":
       return null;
   }
@@ -54,7 +54,9 @@ function compare(left, right, operator) {
   const leftValue = getValue(left);
   const rightValue = getValue(right);
 
-  if (left !== UNKOWN && right !== UNKOWN) {
+  if (leftValue === UNKOWN || rightValue === UNKOWN) {
+    return UNKOWN;
+  } else {
     switch (operator) {
       case "==":
         return leftValue == rightValue;
@@ -72,10 +74,10 @@ function compare(left, right, operator) {
         return leftValue > rightValue;
       case ">=":
         return leftValue >= rightValue;
+      default:
+        return UNKOWN;
     }
   }
-
-  return UNKOWN;
 }
 
 class BinaryExpressionVisitor extends Visitor {

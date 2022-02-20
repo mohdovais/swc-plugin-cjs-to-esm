@@ -24,6 +24,12 @@ const createSpan = ({ start = 0, end = 0, ctxt = 0 } = {}) => ({
   ctxt,
 });
 
+function createEmptyStatement() {
+  return {
+    type: "EmptyStatement",
+    span: createSpan(),
+  };
+}
 /**
  *
  * @param {string} name
@@ -37,6 +43,14 @@ function createIdentifier(name) {
   };
 }
 
+function createExpressionStatement(expression) {
+  return {
+    type: "ExpressionStatement",
+    span: createSpan(),
+    expression,
+  };
+}
+
 /**
  *
  * @param {string} name
@@ -44,23 +58,19 @@ function createIdentifier(name) {
  * @returns {ExpressionStatement}
  */
 function createAssignmentExpressionStatement(name, value) {
-  return {
-    type: "ExpressionStatement",
+  return createExpressionStatement({
+    type: "AssignmentExpression",
     span: createSpan(),
-    expression: {
-      type: "AssignmentExpression",
+    operator: "=",
+    left: {
+      type: "Identifier",
       span: createSpan(),
-      operator: "=",
-      left: {
-        type: "Identifier",
-        span: createSpan(),
-        value: name,
-        optional: false,
-        typeAnnotation: null,
-      },
-      right: value,
+      value: name,
+      optional: false,
+      typeAnnotation: null,
     },
-  };
+    right: value,
+  });
 }
 
 /**
@@ -193,25 +203,38 @@ function createExportDefaultObjectExpression(names) {
 
 /**
  *
- * @param {string} defaultName
+ * @param {string | string[]} specifier
  * @param {string} url
  * @returns {import("@swc/core").ImportDeclaration}
  */
-function createImportDefaultExpression(defaultName, url) {
+function createImportDeclaration(specifier, url) {
   return {
     type: "ImportDeclaration",
     span: createSpan(),
-    specifiers: [
-      {
-        type: "ImportDefaultSpecifier",
-        span: createSpan(),
-        local: {
-          type: "Identifier",
+    specifiers: Array.isArray(specifier)
+      ? specifier.map((spec) => ({
+          type: "ImportSpecifier",
           span: createSpan(),
-          value: defaultName,
-        },
-      },
-    ],
+          local: {
+            type: "Identifier",
+            span: createSpan(),
+            value: "",
+            optional: false,
+          },
+        }))
+      : specifier === ""
+      ? []
+      : [
+          {
+            type: "ImportDefaultSpecifier",
+            span: createSpan(),
+            local: {
+              type: "Identifier",
+              span: createSpan(),
+              value: specifier,
+            },
+          },
+        ],
     source: {
       type: "StringLiteral",
       span: createSpan(),
@@ -225,26 +248,6 @@ function createImportDefaultExpression(defaultName, url) {
   };
 }
 
-/**
- *
- * @returns {ExportDefaultExpression}
- */
-function createExportDefaultModuleDotExports() {
-  return createExportDefaultExpression({
-    type: "MemberExpression",
-    span: createSpan(),
-    object: {
-      type: "Identifier",
-      span: createSpan(),
-      value: "module",
-    },
-    property: {
-      type: "Identifier",
-      span: createSpan(),
-      value: "exports",
-    },
-  });
-}
 
 /**
  *
@@ -349,6 +352,8 @@ function createVerifiedVariableDeclaration(name) {
 ////////
 
 module.exports = {
+  createEmptyStatement,
+  createExpressionStatement,
   createSpan,
   createIdentifier,
   createStringLiteral,
@@ -360,8 +365,7 @@ module.exports = {
   createStringLiteralStatement,
   createExportAllDeclaration,
 
-  createExportDefaultModuleDotExports,
-  createImportDefaultExpression,
+  createImportDeclaration,
   createImporterFunction,
   createVerifiedVariableDeclaration,
   createExportDefaultObjectExpression,

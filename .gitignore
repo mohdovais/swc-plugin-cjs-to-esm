@@ -3,3 +3,4 @@ ast.json
 transformed.js
 .swc
 .DS_Store
+build

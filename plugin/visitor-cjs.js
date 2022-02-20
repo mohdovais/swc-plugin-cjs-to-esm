@@ -3,14 +3,15 @@ const crypto = require("crypto");
 const {
   createStringLiteralStatement,
   createExportAllDeclaration,
-  createExportDefaultModuleDotExports,
-  createImportDefaultExpression,
+  createImportDeclaration,
+  createExportDefaultExpression,
   createExportDefaultObjectExpression,
   createExportDeclaration,
   createSpan,
   createIdentifier,
   createAssignmentExpressionStatement,
   createVariableDeclaration,
+  createExpressionStatement,
 } = require("./create");
 
 const randomId = () => "_" + crypto.randomBytes(4).toString("hex");
@@ -33,7 +34,7 @@ class CommonJSVisitor extends Visitor {
    * @param {import("@swc/core").CallExpression} expression
    * @returns {import("@swc/core").CallExpression}
    */
-  visitCallExpression(expression) {
+  visitCallExpression(expression, empty = false) {
     const callee = expression.callee.value;
 
     if (callee === "require" && expression.arguments.length === 1) {
@@ -42,7 +43,7 @@ class CommonJSVisitor extends Visitor {
       let name;
 
       if (index === -1) {
-        name = url.split(/[\.\/\\-]/g).join("_") + randomId();
+        name = empty ? "" : url.split(/[\.\/\\-]/g).join("_") + randomId();
         this._requireURLs.push(url);
         this._requireNames.push(name);
       } else {
@@ -91,11 +92,21 @@ class CommonJSVisitor extends Visitor {
         return createExportAllDeclaration(url);
       } else {
         this._hasModuleDotExports = true;
+        return createExportDefaultExpression(expression.right);
       }
     }
 
     if (expression.right && expression.right.type === "CallExpression") {
       expression.right = this.visitCallExpression(expression.right);
+    }
+
+    if (
+      expression.type === "CallExpression" &&
+      expression.callee.value === "require"
+    ) {
+      return createExpressionStatement(
+        this.visitCallExpression(expression, true)
+      );
     }
 
     if (
@@ -136,12 +147,10 @@ class CommonJSVisitor extends Visitor {
     const exports = [];
 
     this._requireNames.forEach((name, i) => {
-      imports.push(createImportDefaultExpression(name, this._requireURLs[i]));
+      imports.push(createImportDeclaration(name, this._requireURLs[i]));
     });
 
-    if (this._hasModuleDotExports) {
-      exports.push(createExportDefaultModuleDotExports()); // @revist
-    } else if (this._exportDeclarationNames.size > 0) {
+    if (!this._hasModuleDotExports && this._exportDeclarationNames.size > 0) {
       exports.push(
         createExportDefaultObjectExpression(
           Array.from(this._exportDeclarationNames.keys())

@@ -6,6 +6,7 @@
  */
 
 const { Visitor } = require("@swc/core/Visitor");
+const { createEmptyStatement } = require("./create");
 
 /**
  *
@@ -32,7 +33,9 @@ class IfStatementVisitor extends Visitor {
     if (expression.test.type === "BooleanLiteral") {
       return expression.test.value
         ? get(expression.consequent)
-        : get(expression.alternate);
+        : expression.alternate
+        ? get(expression.alternate)
+        : createEmptyStatement();
     }
 
     return expression;
