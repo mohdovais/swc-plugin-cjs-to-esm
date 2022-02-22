@@ -1,6 +1,7 @@
+const { resolve } = require("path");
 const swc = require("@swc/core");
 const { readFile, writeFile } = require("fs/promises");
-const csm2mjs = require("./plugin");
+const { csm2mjs } = require("csm2mjs");
 
 function transformString(source, { minify = false, filename = "" } = {}) {
   return swc.transform(source, {
@@ -40,12 +41,11 @@ function transform(filename, { minify = false } = {}) {
 }
 
 console.time("transform");
-const filename = "./node_modules/object-assign/index.js";
-const files = [
-  "./node_modules/object-assign/index.js",
-]
+//const filename = "./node_modules/object-assign/index.js";
+const filename = "./node_modules/react/cjs/react.development.js"
+
 transform(filename, {
-  minify: true,
+  minify: false,
 }).then((output) => {
   console.timeEnd("transform");
   return writeFile("build/" + filename.split("/").pop(), output.code);

@@ -4,13 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "pretest": "npm run build -workspaces --if-present",
+    "test": "npm test -workspaces --if-present"
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@swc/core": "^1.2.138",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2"
-  }
+  "dependencies": {},
+  "workspaces": [
+    "packages/**",
+    "tests/**"
+  ]
 }
