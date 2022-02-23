@@ -3,6 +3,7 @@
   "private": true,
   "description": "",
   "scripts": {
+    "pretest": "rm -rf build",
     "test": "rollup -c"
   },
   "repository": {

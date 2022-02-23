@@ -1,27 +1,63 @@
 import { createFilter } from "@rollup/pluginutils";
 import { transform } from "@swc/core";
 import { csm2mjs } from "csm2mjs";
+import { excludeHelpers, mergeDeep } from "./utils";
 
-import type { Options, JsMinifyOptions, ParserConfig } from "@swc/core";
+import type { Options, JscConfig, ParserConfig } from "@swc/core";
 import type { FilterPattern } from "@rollup/pluginutils";
 import type { NormalizedOutputOptions, Plugin, RenderedChunk } from "rollup";
 
 const knownExtensions = ["js", "jsx", "ts", "tsx", "mjs", "cjs"];
 const tsRe = /\.tsx?$/;
 const jsxRe = /\.[jt]sx$/;
-const minifyOptions: JsMinifyOptions = {
-  compress: true,
-  mangle: true,
-};
 
-interface SwcPluginConfig extends Omit<Options, "exclude"> {
+function createSwcOptions(options: Options = {}): Options {
+  const minify = options.minify === true;
+  const defaults: Options = {
+    jsc: {
+      externalHelpers: true,
+      target: "es2018",
+      transform: {
+        react: {
+          runtime: "automatic",
+        },
+        optimizer: {
+          globals: {
+            vars: {
+              "process.env.NODE_ENV": JSON.stringify(
+                minify ? "production" : "development"
+              ),
+            },
+          },
+        },
+      },
+      minify: minify
+        ? {
+            compress: {},
+            mangle: {},
+          }
+        : {},
+    },
+  };
+
+  return mergeDeep(defaults, options);
+}
+
+interface SwcPluginConfig {
   inlcude?: FilterPattern;
   exclude?: FilterPattern;
   minify?: boolean;
   extensions?: string[];
+  jscConfig?: JscConfig;
+  replace?: Record<string, string>;
 }
 
-function transformWithSwc(code: string, filename: string, options: Options) {
+function transformWithSwc(
+  code: string,
+  filename: string,
+  options: Options,
+  transformCommonJS = false
+) {
   const isTypeScript = tsRe.test(filename);
   const isJSX = jsxRe.test(filename);
 
@@ -29,16 +65,16 @@ function transformWithSwc(code: string, filename: string, options: Options) {
     ? { syntax: "typescript", tsx: isJSX }
     : { syntax: "ecmascript", jsx: isJSX };
 
-  const normalizedOptions = Object.assign({}, options, {
-    filename,
-    jsc: {
-      parser,
-      externalHelpers: true,
-    },
-    plugin: csm2mjs,
-  });
+  if (options.jsc != null) {
+    options.jsc.parser = parser;
+  }
 
-  return transform(code, normalizedOptions);
+  options.filename = filename;
+  options.plugin = transformCommonJS ? csm2mjs : undefined;
+
+  console.log(JSON.stringify(options, null, 2));
+
+  return transform(code, options);
 }
 
 function swcPlugin(config: SwcPluginConfig = {}): Plugin {
@@ -47,11 +83,25 @@ function swcPlugin(config: SwcPluginConfig = {}): Plugin {
     exclude,
     inlcude,
     minify = false,
-    ...swcOtions
+    replace = {},
+    jscConfig = {},
   } = config;
-  const rollupFilter = createFilter(inlcude, exclude);
+
+  const rollupFilter = createFilter(inlcude, excludeHelpers(exclude));
   const extensionRegExp = new RegExp("\\.(" + extensions.join("|") + ")$");
   const filter = (id: string) => extensionRegExp.test(id) && rollupFilter(id);
+  const swcOptions = createSwcOptions({
+    minify,
+    jsc: mergeDeep({}, jscConfig, {
+      transform: {
+        optimizer: {
+          globals: {
+            vars: replace,
+          },
+        },
+      },
+    }),
+  });
 
   return {
     name: "swc",
@@ -61,22 +111,39 @@ function swcPlugin(config: SwcPluginConfig = {}): Plugin {
         return null;
       }
 
-      const { code, map } = await transformWithSwc(source, id, swcOtions);
+      const options: Options = JSON.parse(JSON.stringify(swcOptions));
 
-      console.log(code);
+      options.minify = false;
+      if (options.jsc != null) {
+        options.jsc.minify = {};
+        options.jsc.externalHelpers = true;
+      }
 
-      return { code, map };
+      return await transformWithSwc(source, id, options, true);
     },
 
     async renderChunk(
-      code: string,
+      source: string,
       chunk: RenderedChunk,
       outputOptions: NormalizedOutputOptions
     ) {
-      const { fileName } = chunk;
-      const { sourcemap } = outputOptions;
+      if (minify) {
+        const { fileName } = chunk;
+        const { sourcemap } = outputOptions;
 
-      return minify ? await transformWithSwc(code, fileName, swcOtions) : null;
+        const options: Options = JSON.parse(JSON.stringify(swcOptions));
+        options.minify = true;
+        options.sourceMaps = !!sourcemap;
+        if (options.jsc != null) {
+          options.jsc.externalHelpers = false;
+          options.jsc.target = "es2022";
+          options.jsc.transform = {};
+        }
+
+        return await transformWithSwc(source, fileName, options);
+      }
+
+      return null;
     },
   };
 }

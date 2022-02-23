@@ -2,7 +2,7 @@ import { Visitor } from "@swc/core/Visitor";
 import { parseSync } from "@swc/core";
 import { isEqual } from "./utils";
 const find = parse("process.env.NODE_ENV");
-const replace = parse(JSON.stringify("development"));
+const replace = parse(JSON.stringify("production"));
 function parse(str) {
     const module = parseSync(str);
     if (module.body.length === 1 &&

@@ -5,7 +5,7 @@ const Visitor_1 = require("@swc/core/Visitor");
 const core_1 = require("@swc/core");
 const utils_1 = require("./utils");
 const find = parse("process.env.NODE_ENV");
-const replace = parse(JSON.stringify("development"));
+const replace = parse(JSON.stringify("production"));
 function parse(str) {
     const module = (0, core_1.parseSync)(str);
     if (module.body.length === 1 &&

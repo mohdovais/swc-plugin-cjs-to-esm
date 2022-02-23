@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createExportDefaultObjectExpression = exports.createVerifiedVariableDeclaration = exports.createImporterFunction = exports.createImportDeclaration = exports.createExportAllDeclaration = exports.createStringLiteralStatement = exports.createExportDeclaration = exports.createExportDefaultExpression = exports.createCallExpression = exports.createAssignmentExpressionStatement = exports.createVariableDeclaration = exports.createStringLiteral = exports.createIdentifier = exports.createSpan = exports.createExpressionStatement = exports.createEmptyStatement = exports.createBooleanLiteral = void 0;
+exports.creatExportNamedDeclaration = exports.createExportDefaultObjectExpression = exports.createVerifiedVariableDeclaration = exports.createImporterFunction = exports.createImportDeclaration = exports.createExportAllDeclaration = exports.createStringLiteralStatement = exports.createExportDeclaration = exports.createExportDefaultExpression = exports.createCallExpression = exports.createAssignmentExpressionStatement = exports.createVariableDeclaration = exports.createStringLiteral = exports.createIdentifier = exports.createSpan = exports.createExpressionStatement = exports.createEmptyStatement = exports.createBooleanLiteral = void 0;
 function createSpan({ start = 0, end = 0, ctxt = 0 } = {}) {
     return {
         start,
@@ -41,6 +41,27 @@ function createExpressionStatement(expression) {
     };
 }
 exports.createExpressionStatement = createExpressionStatement;
+function creatExportNamedDeclaration(names, source) {
+    return {
+        type: "ExportNamedDeclaration",
+        span: createSpan(),
+        specifiers: names.map((value) => ({
+            type: "ExportSpecifier",
+            span: createSpan(),
+            orig: {
+                type: "Identifier",
+                span: createSpan(),
+                value,
+                optional: false,
+            },
+            exported: null,
+        })),
+        source,
+        //@ts-ignore
+        typeOnly: false,
+    };
+}
+exports.creatExportNamedDeclaration = creatExportNamedDeclaration;
 function createAssignmentExpressionStatement(name, value) {
     return createExpressionStatement({
         type: "AssignmentExpression",

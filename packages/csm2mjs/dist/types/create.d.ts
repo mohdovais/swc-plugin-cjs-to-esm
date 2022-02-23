@@ -1,4 +1,4 @@
-import type { BooleanLiteral, CallExpression, EmptyStatement, ExportAllDeclaration, ExportDeclaration, ExportDefaultExpression, Expression, ExpressionStatement, Identifier, ImportDeclaration, Span, StringLiteral, VariableDeclaration, VariableDeclarationKind } from "@swc/core";
+import type { BooleanLiteral, CallExpression, EmptyStatement, ExportAllDeclaration, ExportDeclaration, ExportDefaultExpression, ExportNamedDeclaration, Expression, ExpressionStatement, Identifier, ImportDeclaration, Span, StringLiteral, VariableDeclaration, VariableDeclarationKind } from "@swc/core";
 declare function createSpan({ start, end, ctxt }?: {
     start?: number | undefined;
     end?: number | undefined;
@@ -8,6 +8,7 @@ declare function createBooleanLiteral(value: boolean): BooleanLiteral;
 declare function createEmptyStatement(): EmptyStatement;
 declare function createIdentifier(name: string): Identifier;
 declare function createExpressionStatement(expression: Expression): ExpressionStatement;
+declare function creatExportNamedDeclaration(names: string[], source?: StringLiteral): ExportNamedDeclaration;
 declare function createAssignmentExpressionStatement(name: string, value: Expression): ExpressionStatement;
 declare function createExportAllDeclaration(url: string): ExportAllDeclaration;
 declare function createVariableDeclaration(name: string, expression?: Expression, kind?: VariableDeclarationKind): VariableDeclaration;
@@ -25,4 +26,4 @@ declare function createImporterFunction(fnName: string, ref: string): VariableDe
  * @returns {VariableDeclaration}
  */
 declare function createVerifiedVariableDeclaration(name: string): VariableDeclaration;
-export { createBooleanLiteral, createEmptyStatement, createExpressionStatement, createSpan, createIdentifier, createStringLiteral, createVariableDeclaration, createAssignmentExpressionStatement, createCallExpression, createExportDefaultExpression, createExportDeclaration, createStringLiteralStatement, createExportAllDeclaration, createImportDeclaration, createImporterFunction, createVerifiedVariableDeclaration, createExportDefaultObjectExpression, };
+export { createBooleanLiteral, createEmptyStatement, createExpressionStatement, createSpan, createIdentifier, createStringLiteral, createVariableDeclaration, createAssignmentExpressionStatement, createCallExpression, createExportDefaultExpression, createExportDeclaration, createStringLiteralStatement, createExportAllDeclaration, createImportDeclaration, createImporterFunction, createVerifiedVariableDeclaration, createExportDefaultObjectExpression, creatExportNamedDeclaration, };

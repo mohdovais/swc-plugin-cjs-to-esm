@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "pretest": "npm run build -workspaces --if-present",
+    "build": "npm run build -workspaces --if-present",
+    "pretest": "npm run build",
     "test": "npm test -workspaces --if-present"
   },
   "author": "",

@@ -5,6 +5,7 @@ import type {
   ExportAllDeclaration,
   ExportDeclaration,
   ExportDefaultExpression,
+  ExportNamedDeclaration,
   Expression,
   ExpressionStatement,
   Identifier,
@@ -54,6 +55,30 @@ function createExpressionStatement(
     type: "ExpressionStatement",
     span: createSpan(),
     expression,
+  };
+}
+
+function creatExportNamedDeclaration(
+  names: string[],
+  source?: StringLiteral
+): ExportNamedDeclaration {
+  return {
+    type: "ExportNamedDeclaration",
+    span: createSpan(),
+    specifiers: names.map((value) => ({
+      type: "ExportSpecifier",
+      span: createSpan(),
+      orig: {
+        type: "Identifier",
+        span: createSpan(),
+        value,
+        optional: false,
+      },
+      exported: null,
+    })),
+    source,
+    //@ts-ignore
+    typeOnly: false,
   };
 }
 
@@ -328,4 +353,5 @@ export {
   createImporterFunction,
   createVerifiedVariableDeclaration,
   createExportDefaultObjectExpression,
+  creatExportNamedDeclaration,
 };

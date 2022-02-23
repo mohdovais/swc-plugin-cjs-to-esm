@@ -1,37 +1,39 @@
 import type {
   CallExpression,
+  Declaration,
   ExpressionStatement,
+  FunctionDeclaration,
   Identifier,
-  ImportDeclaration,
+  ModuleDeclaration,
   ModuleItem,
   Program,
   VariableDeclaration,
 } from "@swc/core";
 import { Visitor } from "@swc/core/Visitor";
 import crypto from "crypto";
-import {
-  createStringLiteralStatement,
+import * as create from "./create";
+const {
   createExportAllDeclaration,
   createImportDeclaration,
   createExportDefaultExpression,
   createExportDefaultObjectExpression,
-  createExportDeclaration,
   createIdentifier,
   createAssignmentExpressionStatement,
   createVariableDeclaration,
   createExpressionStatement,
-} from "./create";
+  creatExportNamedDeclaration,
+} = create;
 
 const randomId = () => "_" + crypto.randomBytes(4).toString("hex");
 
 class CommonJSVisitor extends Visitor {
-  _exportDeclarationNames = new Map();
-  _exportDeclarations = new Map();
+  _exportDeclarationNames: string[] = [];
   _requireURLs: string[] = [];
   _requireNames: string[] = [];
+  _functions: string[] = [];
+  _exportAll: string[] = []; //for default
 
   _hasModuleDotExports = false;
-  _exportAllDeclarations = new Map();
 
   visitProgram(program: Program) {
     return this.updateProgramTree(super.visitProgram(program));
@@ -99,10 +101,11 @@ class CommonJSVisitor extends Visitor {
         expression.right.arguments[0].expression.type === "StringLiteral"
       ) {
         const url = expression.right.arguments[0].expression.value;
-        const placeholder = "ExportAllDeclaration_" + randomId();
-        this._exportAllDeclarations.set(placeholder, url);
+        this._exportAll.push(url);
 
-        return createExportAllDeclaration(url);
+        return create.createEmptyStatement();
+
+        //return createExportAllDeclaration(url);
       } else {
         this._hasModuleDotExports = true;
         return createExportDefaultExpression(expression.right);
@@ -128,6 +131,7 @@ class CommonJSVisitor extends Visitor {
       );
     }
 
+    // exports.name = itentifier
     if (
       expression.type === "AssignmentExpression" &&
       expression.left &&
@@ -139,24 +143,18 @@ class CommonJSVisitor extends Visitor {
       expression.left.property.type === "Identifier"
     ) {
       const exportName = expression.left.property.value;
-      const placeholder = exportName + randomId();
-
-      this._exportDeclarationNames.set(
-        exportName,
-        this._exportDeclarationNames.has(exportName)
-          ? this._exportDeclarationNames.get(exportName) + 1
-          : 1
-      );
-
-      this._exportDeclarations.set(placeholder, {
-        name: exportName,
-        init: expression.right,
-      });
-
-      return createStringLiteralStatement(placeholder);
+      if (!this._exportDeclarationNames.includes(exportName)) {
+        this._exportDeclarationNames.push(exportName);
+      }
+      return createAssignmentExpressionStatement(exportName, expression.right);
     }
 
     return statement;
+  }
+
+  visitFunctionDeclaration(decl: FunctionDeclaration): Declaration {
+    this._functions.push(decl.identifier.value);
+    return decl;
   }
 
   /**
@@ -165,48 +163,53 @@ class CommonJSVisitor extends Visitor {
    * @returns {import("@swc/core").Program}
    */
   updateProgramTree(program: Program) {
-    const imports: ImportDeclaration[] = [];
-    const variables: VariableDeclaration[] = [];
-    const exports = [];
+    let hasDefaultExport = false;
 
-    this._requireNames.forEach((name, i) => {
-      imports.push(createImportDeclaration(name, this._requireURLs[i]));
+    const importDeclarations = this._requireNames.map((name, i) => {
+      return createImportDeclaration(name, this._requireURLs[i]);
     });
 
-    if (!this._hasModuleDotExports && this._exportDeclarationNames.size > 0) {
-      exports.push(
-        createExportDefaultObjectExpression(
-          Array.from(this._exportDeclarationNames.keys())
-        )
-      );
+    const variableDeclarations: VariableDeclaration[] = [];
+    this._exportDeclarationNames.forEach((name) => {
+      if (!this._functions.includes(name)) {
+        variableDeclarations.push(createVariableDeclaration(name, undefined));
+      }
+    });
+
+    var exportDeclarations: ModuleDeclaration[] = [];
+    if (this._exportDeclarationNames.length > 0) {
+      exportDeclarations = [
+        creatExportNamedDeclaration(this._exportDeclarationNames),
+      ];
+
+      if (!this._hasModuleDotExports) {
+        hasDefaultExport = true;
+        exportDeclarations.push(
+          createExportDefaultObjectExpression(this._exportDeclarationNames)
+        );
+      }
     }
 
-    const body = program.body.map((statement: ModuleItem) => {
-      const literal =
-        statement.type === "ExpressionStatement" &&
-        statement.expression &&
-        statement.expression.type === "StringLiteral" &&
-        statement.expression.value;
+    this._exportAll.forEach((url) => {
+      exportDeclarations.push(createExportAllDeclaration(url));
 
-      if (literal !== false && this._exportDeclarations.has(literal)) {
-        const { name, init } = this._exportDeclarations.get(literal);
-
-        const count = this._exportDeclarationNames.get(name);
-
-        if (count === 1) {
-          return createExportDeclaration(name, init);
-        } else {
-          variables.push(createVariableDeclaration(name, undefined));
-          exports.push(createExportDeclaration(name, undefined));
-          return createAssignmentExpressionStatement(name, init);
-        }
+      if (!hasDefaultExport) {
+        hasDefaultExport = true;
+        exportDeclarations.push(
+          creatExportNamedDeclaration(
+            ["default"],
+            create.createStringLiteral(url)
+          )
+        );
       }
-
-      return statement;
     });
 
-    // @ts-ignore
-    program.body = [].concat(imports, variables, body, exports);
+    program.body = ([] as ModuleItem[]).concat(
+      importDeclarations,
+      variableDeclarations,
+      program.body,
+      exportDeclarations
+    );
 
     return program;
   }

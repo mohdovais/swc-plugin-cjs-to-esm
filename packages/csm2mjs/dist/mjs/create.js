@@ -33,6 +33,26 @@ function createExpressionStatement(expression) {
         expression,
     };
 }
+function creatExportNamedDeclaration(names, source) {
+    return {
+        type: "ExportNamedDeclaration",
+        span: createSpan(),
+        specifiers: names.map((value) => ({
+            type: "ExportSpecifier",
+            span: createSpan(),
+            orig: {
+                type: "Identifier",
+                span: createSpan(),
+                value,
+                optional: false,
+            },
+            exported: null,
+        })),
+        source,
+        //@ts-ignore
+        typeOnly: false,
+    };
+}
 function createAssignmentExpressionStatement(name, value) {
     return createExpressionStatement({
         type: "AssignmentExpression",
@@ -254,4 +274,4 @@ function createVerifiedVariableDeclaration(name) {
         },
     });
 }
-export { createBooleanLiteral, createEmptyStatement, createExpressionStatement, createSpan, createIdentifier, createStringLiteral, createVariableDeclaration, createAssignmentExpressionStatement, createCallExpression, createExportDefaultExpression, createExportDeclaration, createStringLiteralStatement, createExportAllDeclaration, createImportDeclaration, createImporterFunction, createVerifiedVariableDeclaration, createExportDefaultObjectExpression, };
+export { createBooleanLiteral, createEmptyStatement, createExpressionStatement, createSpan, createIdentifier, createStringLiteral, createVariableDeclaration, createAssignmentExpressionStatement, createCallExpression, createExportDefaultExpression, createExportDeclaration, createStringLiteralStatement, createExportAllDeclaration, createImportDeclaration, createImporterFunction, createVerifiedVariableDeclaration, createExportDefaultObjectExpression, creatExportNamedDeclaration, };
