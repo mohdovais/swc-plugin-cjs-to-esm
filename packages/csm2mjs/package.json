@@ -13,15 +13,14 @@
   },
   "scripts": {
     "prebuild": "rm -rf dist",
-    "build": "tsc -b tsconfig.json tsconfig-cjs.json",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -b tsconfig.json tsconfig-cjs.json"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mohdovais/swc-plugin-cjs-to-esm.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Mohd Ovais",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/mohdovais/swc-plugin-cjs-to-esm/issues"
   },

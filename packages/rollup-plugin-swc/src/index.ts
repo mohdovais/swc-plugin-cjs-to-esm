@@ -72,8 +72,6 @@ function transformWithSwc(
   options.filename = filename;
   options.plugin = transformCommonJS ? csm2mjs : undefined;
 
-  console.log(JSON.stringify(options, null, 2));
-
   return transform(code, options);
 }
 

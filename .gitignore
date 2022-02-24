@@ -4,3 +4,4 @@ transformed.js
 .swc
 .DS_Store
 build
+test-builds

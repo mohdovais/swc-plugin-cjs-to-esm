@@ -2,17 +2,14 @@ import { createFilter } from "@rollup/pluginutils";
 import { transform } from "@swc/core";
 import { csm2mjs } from "csm2mjs";
 import { excludeHelpers, mergeDeep } from "./utils";
-import path from "path";
-import fs from "fs";
 const knownExtensions = ["js", "jsx", "ts", "tsx", "mjs", "cjs"];
 const tsRe = /\.tsx?$/;
 const jsxRe = /\.[jt]sx$/;
-// @revisit
 function createSwcOptions(options = {}) {
     const minify = options.minify === true;
     const defaults = {
         jsc: {
-            externalHelpers: false,
+            externalHelpers: true,
             target: "es2018",
             transform: {
                 react: {
@@ -42,11 +39,11 @@ function transformWithSwc(code, filename, options, transformCommonJS = false) {
     const parser = isTypeScript
         ? { syntax: "typescript", tsx: isJSX }
         : { syntax: "ecmascript", jsx: isJSX };
-    //@ts-ignore
-    options.jsc.parser = parser;
+    if (options.jsc != null) {
+        options.jsc.parser = parser;
+    }
     options.filename = filename;
     options.plugin = transformCommonJS ? csm2mjs : undefined;
-    console.log(JSON.stringify(options, null, 2));
     return transform(code, options);
 }
 function swcPlugin(config = {}) {
@@ -56,7 +53,7 @@ function swcPlugin(config = {}) {
     const filter = (id) => extensionRegExp.test(id) && rollupFilter(id);
     const swcOptions = createSwcOptions({
         minify,
-        jsc: mergeDeep(jscConfig, {
+        jsc: mergeDeep({}, jscConfig, {
             transform: {
                 optimizer: {
                     globals: {
@@ -73,19 +70,12 @@ function swcPlugin(config = {}) {
                 return null;
             }
             const options = JSON.parse(JSON.stringify(swcOptions));
-            // @ts-ignore
-            options.jsc.minify = {};
             options.minify = false;
-            // @ts-ignore
-            options.jsc.externalHelpers = true;
-            const { code, map } = await transformWithSwc(source, id, options, true);
-            const tempId = path.join(process.cwd(), "temp", id.replace("/Users/ovais/Projects/swc-plugin-cjs2esm/", ""));
-            const tempDir = path.dirname(tempId);
-            if (!fs.existsSync(tempDir)) {
-                fs.mkdirSync(tempDir, { recursive: true });
+            if (options.jsc != null) {
+                options.jsc.minify = {};
+                options.jsc.externalHelpers = true;
             }
-            fs.writeFileSync(tempId, code);
-            return { code, map };
+            return await transformWithSwc(source, id, options, true);
         },
         async renderChunk(source, chunk, outputOptions) {
             if (minify) {
@@ -93,7 +83,7 @@ function swcPlugin(config = {}) {
                 const { sourcemap } = outputOptions;
                 const options = JSON.parse(JSON.stringify(swcOptions));
                 options.minify = true;
-                options.sourceMaps = true;
+                options.sourceMaps = !!sourcemap;
                 if (options.jsc != null) {
                     options.jsc.externalHelpers = false;
                     options.jsc.target = "es2022";
