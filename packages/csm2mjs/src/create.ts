@@ -1,49 +1,56 @@
-/**
- *
- * @typedef {import("@swc/core").Span} Span
- * @typedef {import("@swc/core").Expression} Expression
- * @typedef {import("@swc/core").VariableDeclarationKind} VariableDeclarationKind
- * @typedef {import("@swc/core").VariableDeclaration} VariableDeclaration
- * @typedef {import("@swc/core").CallExpression} CallExpression
- * @typedef {import("@swc/core").Argument} Argument
- * @typedef {import("@swc/core").ExportDefaultExpression} ExportDefaultExpression
- * @typedef {import("@swc/core").ImportDeclaration} ImportDeclaration
- * @typedef {import("@swc/core").ExportDeclaration} ExportDeclaration
- * @typedef {import("@swc/core").ExpressionStatement} ExpressionStatement
- * @typedef {import("@swc/core").ExportAllDeclaration} ExportAllDeclaration
- */
+import type {
+  BooleanLiteral,
+  CallExpression,
+  EmptyStatement,
+  ExportAllDeclaration,
+  ExportDeclaration,
+  ExportDefaultExpression,
+  ExportNamedDeclaration,
+  Expression,
+  ExpressionStatement,
+  Identifier,
+  ImportDeclaration,
+  Span,
+  StringLiteral,
+  VariableDeclaration,
+  VariableDeclarationKind,
+} from "@swc/core";
 
-/**
- *
- * @param {Span} param0
- * @returns {Span}
- */
-const createSpan = ({ start = 0, end = 0, ctxt = 0 } = {}) => ({
-  start,
-  end,
-  ctxt,
-});
+function createSpan({ start = 0, end = 0, ctxt = 0 } = {}): Span {
+  return {
+    start,
+    end,
+    ctxt,
+  };
+}
 
-function createEmptyStatement() {
+function createBooleanLiteral(value: boolean): BooleanLiteral {
+  return {
+    type: "BooleanLiteral",
+    span: createSpan(),
+    value,
+  };
+}
+
+function createEmptyStatement(): EmptyStatement {
   return {
     type: "EmptyStatement",
     span: createSpan(),
   };
 }
-/**
- *
- * @param {string} name
- * @returns {import("@swc/core").Identifier}
- */
-function createIdentifier(name) {
+
+function createIdentifier(name: string): Identifier {
   return {
     type: "Identifier",
     span: createSpan(),
     value: name,
+    optional: false,
   };
 }
 
-function createExpressionStatement(expression) {
+function createExpressionStatement(
+  expression: Expression
+): ExpressionStatement {
   return {
     type: "ExpressionStatement",
     span: createSpan(),
@@ -51,13 +58,34 @@ function createExpressionStatement(expression) {
   };
 }
 
-/**
- *
- * @param {string} name
- * @param {Expression} value
- * @returns {ExpressionStatement}
- */
-function createAssignmentExpressionStatement(name, value) {
+function creatExportNamedDeclaration(
+  names: string[],
+  source?: StringLiteral
+): ExportNamedDeclaration {
+  return {
+    type: "ExportNamedDeclaration",
+    span: createSpan(),
+    specifiers: names.map((value) => ({
+      type: "ExportSpecifier",
+      span: createSpan(),
+      orig: {
+        type: "Identifier",
+        span: createSpan(),
+        value,
+        optional: false,
+      },
+      exported: null,
+    })),
+    source,
+    //@ts-ignore
+    typeOnly: false,
+  };
+}
+
+function createAssignmentExpressionStatement(
+  name: string,
+  value: Expression
+): ExpressionStatement {
   return createExpressionStatement({
     type: "AssignmentExpression",
     span: createSpan(),
@@ -67,18 +95,13 @@ function createAssignmentExpressionStatement(name, value) {
       span: createSpan(),
       value: name,
       optional: false,
-      typeAnnotation: null,
+      typeAnnotation: undefined,
     },
     right: value,
   });
 }
 
-/**
- *
- * @param {string} url
- * @returns {ExportAllDeclaration}
- */
-function createExportAllDeclaration(url) {
+function createExportAllDeclaration(url: string): ExportAllDeclaration {
   return {
     type: "ExportAllDeclaration",
     span: createSpan(),
@@ -87,23 +110,15 @@ function createExportAllDeclaration(url) {
       span: createSpan(),
       value: url,
       hasEscape: false,
-      kind: {
-        type: "normal",
-        containsQuote: true,
-      },
     },
-    asserts: null,
   };
 }
 
-/**
- *
- * @param {string} name
- * @param {Expression} expression
- * @param {VariableDeclarationKind} kind
- * @returns {VariableDeclaration}
- */
-function createVariableDeclaration(name, expression, kind = "var") {
+function createVariableDeclaration(
+  name: string,
+  expression?: Expression,
+  kind: VariableDeclarationKind = "var"
+): VariableDeclaration {
   return {
     type: "VariableDeclaration",
     span: createSpan(),
@@ -118,21 +133,16 @@ function createVariableDeclaration(name, expression, kind = "var") {
           span: createSpan(),
           value: name,
           optional: false,
-          typeAnnotation: null,
+          typeAnnotation: undefined,
         },
         init: expression,
+        definite: false,
       },
     ],
   };
 }
 
-/**
- *
- * @param {string} callee
- * @param {Argument[]} args
- * @returns {CallExpression}
- */
-function createCallExpression(callee, args = []) {
+function createCallExpression(callee: string, args = []): CallExpression {
   return {
     type: "CallExpression",
     span: createSpan(),
@@ -140,17 +150,15 @@ function createCallExpression(callee, args = []) {
       type: "Identifier",
       span: createSpan(),
       value: callee,
+      optional: false,
     },
     arguments: args,
   };
 }
 
-/**
- *
- * @param {Expression} expression
- * @returns {ExportDefaultExpression}
- */
-function createExportDefaultExpression(expression) {
+function createExportDefaultExpression(
+  expression: Expression
+): ExportDefaultExpression {
   return {
     type: "ExportDefaultExpression",
     span: createSpan(),
@@ -158,25 +166,17 @@ function createExportDefaultExpression(expression) {
   };
 }
 
-/**
- *
- * @param {string} value
- * @returns {import("@swc/core").StringLiteral}
- */
-function createStringLiteral(value) {
+function createStringLiteral(value: string): StringLiteral {
   return {
     type: "StringLiteral",
     span: createSpan(),
     value,
+    hasEscape: false,
   };
 }
 
-/**
- *
- * @param {string} literal
- * @returns {ExpressionStatement}
- */
-function createStringLiteralStatement(literal) {
+// composite
+function createStringLiteralStatement(literal: string): ExpressionStatement {
   return {
     type: "ExpressionStatement",
     span: createSpan(),
@@ -184,12 +184,9 @@ function createStringLiteralStatement(literal) {
   };
 }
 
-/**
- *
- * @param {string[]} names
- * @returns {ExportDefaultExpression}
- */
-function createExportDefaultObjectExpression(names) {
+function createExportDefaultObjectExpression(
+  names: string[]
+): ExportDefaultExpression {
   return createExportDefaultExpression({
     type: "ObjectExpression",
     span: createSpan(),
@@ -197,17 +194,15 @@ function createExportDefaultObjectExpression(names) {
       type: "Identifier",
       span: createSpan(),
       value,
+      optional: false,
     })),
   });
 }
 
-/**
- *
- * @param {string | string[]} specifier
- * @param {string} url
- * @returns {import("@swc/core").ImportDeclaration}
- */
-function createImportDeclaration(specifier, url) {
+function createImportDeclaration(
+  specifier: string | string[],
+  url: string
+): ImportDeclaration {
   return {
     type: "ImportDeclaration",
     span: createSpan(),
@@ -221,6 +216,7 @@ function createImportDeclaration(specifier, url) {
             value: "",
             optional: false,
           },
+          imported: null,
         }))
       : specifier === ""
       ? []
@@ -232,6 +228,7 @@ function createImportDeclaration(specifier, url) {
               type: "Identifier",
               span: createSpan(),
               value: specifier,
+              optional: false,
             },
           },
         ],
@@ -240,22 +237,14 @@ function createImportDeclaration(specifier, url) {
       span: createSpan(),
       value: url,
       hasEscape: false,
-      kind: {
-        type: "normal",
-        containsQuote: true,
-      },
     },
   };
 }
 
-
-/**
- *
- * @param {string} name
- * @param {expression} Expression
- * @returns {ExportDeclaration}
- */
-function createExportDeclaration(name, expression) {
+function createExportDeclaration(
+  name: string,
+  expression: Expression | undefined
+): ExportDeclaration {
   return {
     type: "ExportDeclaration",
     span: createSpan(),
@@ -272,6 +261,7 @@ function createExportDeclaration(name, expression) {
             type: "Identifier",
             span: createSpan(),
             value: name,
+            optional: false,
           },
           init: expression,
           definite: false,
@@ -281,13 +271,10 @@ function createExportDeclaration(name, expression) {
   };
 }
 
-/**
- *
- * @param {string} fnName
- * @param {string} ref
- * @returns {VariableDeclaration}
- */
-function createImporterFunction(fnName, ref) {
+function createImporterFunction(
+  fnName: string,
+  ref: string
+): VariableDeclaration {
   return createVariableDeclaration(fnName, {
     type: "ArrowFunctionExpression",
     span: createSpan(),
@@ -296,7 +283,10 @@ function createImporterFunction(fnName, ref) {
       type: "Identifier",
       span: createSpan(),
       value: ref,
+      optional: false,
     },
+    async: false,
+    generator: false,
   });
 }
 
@@ -305,7 +295,7 @@ function createImporterFunction(fnName, ref) {
  * @param {string} name
  * @returns {VariableDeclaration}
  */
-function createVerifiedVariableDeclaration(name) {
+function createVerifiedVariableDeclaration(name: string) {
   return createVariableDeclaration(name, {
     type: "ConditionalExpression",
     span: createSpan(),
@@ -329,10 +319,6 @@ function createVerifiedVariableDeclaration(name) {
         span: createSpan(),
         value: "object",
         hasEscape: false,
-        kind: {
-          type: "normal",
-          containsQuote: true,
-        },
       },
     },
     consequent: {
@@ -349,9 +335,8 @@ function createVerifiedVariableDeclaration(name) {
   });
 }
 
-////////
-
-module.exports = {
+export {
+  createBooleanLiteral,
   createEmptyStatement,
   createExpressionStatement,
   createSpan,
@@ -364,9 +349,9 @@ module.exports = {
   createExportDeclaration,
   createStringLiteralStatement,
   createExportAllDeclaration,
-
   createImportDeclaration,
   createImporterFunction,
   createVerifiedVariableDeclaration,
   createExportDefaultObjectExpression,
+  creatExportNamedDeclaration,
 };

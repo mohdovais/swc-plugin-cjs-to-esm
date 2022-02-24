@@ -1,14 +1,7 @@
-"use strict";
-
 const toString = Object.prototype.toString;
 
-/**
- *
- * @param {*} objectA
- * @param {*} objectB
- * @returns {boolean}
- */
-function isEqual(objectA, objectB) {
+
+function isEqual(objectA: any, objectB: any): boolean {
   if (objectA === objectB) {
     return true;
   }
@@ -42,4 +35,4 @@ function isEqual(objectA, objectB) {
   return false;
 }
 
-module.exports = { isEqual };
+export { isEqual };

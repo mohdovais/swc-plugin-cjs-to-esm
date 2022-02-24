@@ -1,17 +1,18 @@
-const { UseStrictVisitor } = require("./visitor-use-strict");
-const { UnwrapIFFEVisitor } = require("./visitor-iife-unwrap");
-const { ReplaceVisitor } = require("./visitor-replace");
-const { BinaryExpressionVisitor } = require("./visitor-binary-expression");
-const { IfStatementVisitor } = require("./visitor-if-statement");
+import type { Program } from "@swc/core";
 
-const { CommonJSVisitor } = require("./visitor-cjs");
+import { UseStrictVisitor } from "./visitor-use-strict";
+import { UnwrapIFFEVisitor } from "./visitor-iife-unwrap";
+import { ReplaceVisitor } from "./visitor-replace";
+import { BinaryExpressionVisitor } from "./visitor-binary-expression";
+import { IfStatementVisitor } from "./visitor-if-statement";
+import { CommonJSVisitor } from "./visitor-cjs";
 
 /**
  *
  * @param {import("@swc/core").Program} program
  * @returns {import("@swc/core").Program}
  */
-module.exports = (program) => {
+function csm2mjs(program: Program): Program {
   const useStrictVisitor = new UseStrictVisitor();
   const unwrapIFFEVisitor = new UnwrapIFFEVisitor();
   const replaceVisitor = new ReplaceVisitor();
@@ -32,4 +33,6 @@ module.exports = (program) => {
   //require("fs").writeFileSync("./ast.json", JSON.stringify(result, null, 4));
 
   return result;
-};
+}
+
+export { csm2mjs };

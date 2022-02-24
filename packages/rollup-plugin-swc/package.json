@@ -1,0 +1,31 @@
+{
+  "name": "rollup-plugin-swc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/cjs/index.js",
+  "module": "dist/mjs/index.js",
+  "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/mjs/index.js"
+    }
+  },
+  "scripts": {
+    "prebuild": "rm -rf dist",
+    "build": "tsc -b tsconfig.json tsconfig-cjs.json"
+  },
+  "author": "Mohd Ovais",
+  "license": "MIT",
+  "peerDependencies": {
+    "@swc/core": "*",
+    "@swc/helpers": "*",
+    "rollup": "*"
+  },
+  "devDependencies": {
+    "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "@rollup/pluginutils": "^4.1.2"
+  }
+}

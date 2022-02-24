@@ -1,31 +1,12 @@
-/**
- * @typedef {import("@swc/core").Expression} Expression
- * @typedef {import("@swc/core").BinaryExpression} BinaryExpression
- * @typedef {import("@swc/core").BinaryOperator} BinaryOperator
- * @typedef {import("@swc/core").BooleanLiteral} BooleanLiteral
- */
-
-const { Visitor } = require("@swc/core/Visitor");
-const { createSpan } = require("./create");
+import { BinaryExpression, BinaryOperator, Expression } from "@swc/core";
+import { Visitor } from "@swc/core/Visitor";
+import { createBooleanLiteral } from "./create";
 const UNKOWN = "UNKNOWN_" + Date.now().toString(32);
 
-/**
- *
- * @param {boolean} value
- * @returns {BooleanLiteral}
- */
-const booleanLiteral = (value) => ({
-  type: "BooleanLiteral",
-  span: createSpan(),
-  value,
-});
+type KnownParseValue = number | string | boolean | undefined | null;
+type ParsedValue = KnownParseValue | typeof UNKOWN;
 
-/**
- *
- * @param {Expression} expression
- * @param {string|number|boolean}
- */
-const getValue = (expression) => {
+const getValue = (expression: Expression): ParsedValue => {
   switch (expression.type) {
     case "StringLiteral":
     case "NumericLiteral":
@@ -43,18 +24,20 @@ const getValue = (expression) => {
   return UNKOWN;
 };
 
-/**
- *
- * @param {*} left
- * @param {*} right
- * @param {BinaryOperator} operator
- * @returns {boolean|UNKOWN}
- */
-function compare(left, right, operator) {
+function compare(
+  left: Expression,
+  right: Expression,
+  operator: BinaryOperator
+): boolean | typeof UNKOWN {
   const leftValue = getValue(left);
   const rightValue = getValue(right);
 
-  if (leftValue === UNKOWN || rightValue === UNKOWN) {
+  if (
+    leftValue === UNKOWN ||
+    rightValue === UNKOWN ||
+    leftValue == null ||
+    rightValue == null
+  ) {
     return UNKOWN;
   } else {
     switch (operator) {
@@ -86,19 +69,19 @@ class BinaryExpressionVisitor extends Visitor {
    * @param {BinaryExpression} expression
    * @returns {BinaryExpression | BooleanLiteral}
    */
-  visitBinaryExpression(expression) {
+  visitBinaryExpression(expression: BinaryExpression) {
     const result = compare(
       expression.left,
       expression.right,
       expression.operator
     );
 
-    if (result !== UNKOWN) {
-      return booleanLiteral(result);
+    if (typeof result !== "string") {
+      return createBooleanLiteral(result);
     }
 
     return expression;
   }
 }
 
-module.exports = { BinaryExpressionVisitor };
+export { BinaryExpressionVisitor };
