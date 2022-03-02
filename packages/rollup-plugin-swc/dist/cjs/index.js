@@ -11,14 +11,18 @@ const jsxRe = /\.[jt]sx$/;
 function createSwcOptions(options = {}) {
     const minify = options.minify === true;
     const defaults = {
+        sourceMaps: true,
         jsc: {
             externalHelpers: true,
-            target: "es2018",
+            target: "es2022",
+            loose: false,
             transform: {
                 react: {
                     runtime: "automatic",
                 },
                 optimizer: {
+                    //@ts-ignore
+                    simplify: false,
                     globals: {
                         vars: {
                             "process.env.NODE_ENV": JSON.stringify(minify ? "production" : "development"),
@@ -28,8 +32,8 @@ function createSwcOptions(options = {}) {
             },
             minify: minify
                 ? {
-                    compress: {},
-                    mangle: {},
+                    compress: true,
+                    mangle: true,
                 }
                 : {},
         },
@@ -46,7 +50,11 @@ function transformWithSwc(code, filename, options, transformCommonJS = false) {
         options.jsc.parser = parser;
     }
     options.filename = filename;
-    options.plugin = transformCommonJS ? csm2mjs_1.csm2mjs : undefined;
+    options.plugin = transformCommonJS
+        ? (0, csm2mjs_1.createCsm2MjsPlugin)({
+            replace: options.jsc?.transform?.optimizer?.globals?.vars,
+        })
+        : undefined;
     return (0, core_1.transform)(code, options);
 }
 function swcPlugin(config = {}) {
@@ -75,18 +83,17 @@ function swcPlugin(config = {}) {
             const options = JSON.parse(JSON.stringify(swcOptions));
             options.minify = false;
             if (options.jsc != null) {
-                options.jsc.minify = {};
+                options.jsc.minify = { compress: false, mangle: false };
                 options.jsc.externalHelpers = true;
             }
-            return await transformWithSwc(source, id, options, true);
+            const result = await transformWithSwc(source, id, options, true);
+            return result;
         },
         async renderChunk(source, chunk, outputOptions) {
             if (minify) {
                 const { fileName } = chunk;
-                const { sourcemap } = outputOptions;
                 const options = JSON.parse(JSON.stringify(swcOptions));
                 options.minify = true;
-                options.sourceMaps = !!sourcemap;
                 if (options.jsc != null) {
                     options.jsc.externalHelpers = false;
                     options.jsc.target = "es2022";

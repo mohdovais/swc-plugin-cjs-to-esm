@@ -1,3 +1,4 @@
+//@ts-check
 import { swcPlugin } from "rollup-plugin-swc";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 
@@ -6,6 +7,10 @@ export default {
   output: {
     dir: "test-builds/tsx",
     entryFileNames: "app.js",
+    //sourcemap: true,
+    /**
+     * @param {string} id
+     */
     manualChunks(id) {
       if (id.includes("node_modules")) {
         return "vendor";
