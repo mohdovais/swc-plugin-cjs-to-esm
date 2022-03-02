@@ -1,7 +1,7 @@
-import { memo } from "react";
+import React from 'react';
 
 function App() {
   return <div>Hello, world!</div>;
 }
 
-export default memo(App);
+export default App;

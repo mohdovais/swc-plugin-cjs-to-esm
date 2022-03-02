@@ -2,11 +2,10 @@
   "name": "swc-playground",
   "private": true,
   "description": "",
-  "main": "index.js",
   "scripts": {
     "build": "npm run build -workspaces --if-present",
     "pretest": "rm -rf test-builds & npm run build",
-    "test": "rollup -c"
+    "test": "rollup -c test.config.js"
   },
   "author": "Mohd Ovais",
   "license": "MIT",

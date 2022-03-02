@@ -1,6 +1,6 @@
 import { createFilter } from "@rollup/pluginutils";
 import { transform } from "@swc/core";
-import { csm2mjs } from "csm2mjs";
+import { createCsm2MjsPlugin } from "csm2mjs";
 import { excludeHelpers, mergeDeep } from "./utils";
 const knownExtensions = ["js", "jsx", "ts", "tsx", "mjs", "cjs"];
 const tsRe = /\.tsx?$/;
@@ -8,14 +8,18 @@ const jsxRe = /\.[jt]sx$/;
 function createSwcOptions(options = {}) {
     const minify = options.minify === true;
     const defaults = {
+        sourceMaps: true,
         jsc: {
             externalHelpers: true,
-            target: "es2018",
+            target: "es2022",
+            loose: false,
             transform: {
                 react: {
                     runtime: "automatic",
                 },
                 optimizer: {
+                    //@ts-ignore
+                    simplify: false,
                     globals: {
                         vars: {
                             "process.env.NODE_ENV": JSON.stringify(minify ? "production" : "development"),
@@ -25,8 +29,8 @@ function createSwcOptions(options = {}) {
             },
             minify: minify
                 ? {
-                    compress: {},
-                    mangle: {},
+                    compress: true,
+                    mangle: true,
                 }
                 : {},
         },
@@ -34,6 +38,7 @@ function createSwcOptions(options = {}) {
     return mergeDeep(defaults, options);
 }
 function transformWithSwc(code, filename, options, transformCommonJS = false) {
+    var _a, _b, _c, _d;
     const isTypeScript = tsRe.test(filename);
     const isJSX = jsxRe.test(filename);
     const parser = isTypeScript
@@ -43,7 +48,11 @@ function transformWithSwc(code, filename, options, transformCommonJS = false) {
         options.jsc.parser = parser;
     }
     options.filename = filename;
-    options.plugin = transformCommonJS ? csm2mjs : undefined;
+    options.plugin = transformCommonJS
+        ? createCsm2MjsPlugin({
+            replace: (_d = (_c = (_b = (_a = options.jsc) === null || _a === void 0 ? void 0 : _a.transform) === null || _b === void 0 ? void 0 : _b.optimizer) === null || _c === void 0 ? void 0 : _c.globals) === null || _d === void 0 ? void 0 : _d.vars,
+        })
+        : undefined;
     return transform(code, options);
 }
 function swcPlugin(config = {}) {
@@ -72,18 +81,17 @@ function swcPlugin(config = {}) {
             const options = JSON.parse(JSON.stringify(swcOptions));
             options.minify = false;
             if (options.jsc != null) {
-                options.jsc.minify = {};
+                options.jsc.minify = { compress: false, mangle: false };
                 options.jsc.externalHelpers = true;
             }
-            return await transformWithSwc(source, id, options, true);
+            const result = await transformWithSwc(source, id, options, true);
+            return result;
         },
         async renderChunk(source, chunk, outputOptions) {
             if (minify) {
                 const { fileName } = chunk;
-                const { sourcemap } = outputOptions;
                 const options = JSON.parse(JSON.stringify(swcOptions));
                 options.minify = true;
-                options.sourceMaps = !!sourcemap;
                 if (options.jsc != null) {
                     options.jsc.externalHelpers = false;
                     options.jsc.target = "es2022";

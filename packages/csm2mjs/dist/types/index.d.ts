@@ -1,8 +1,7 @@
 import type { Program } from "@swc/core";
-/**
- *
- * @param {import("@swc/core").Program} program
- * @returns {import("@swc/core").Program}
- */
-declare function csm2mjs(program: Program): Program;
-export { csm2mjs };
+import { ReplaceConfig } from "./visitor-replace";
+declare type Config = {
+    replace?: ReplaceConfig["replace"];
+};
+declare function createCsm2MjsPlugin(config: Config): (program: Program) => Program;
+export { createCsm2MjsPlugin };

@@ -1,36 +1,29 @@
+// @ts-check
 const { resolve } = require("path");
 const swc = require("@swc/core");
 const { readFile, writeFile } = require("fs/promises");
-const { csm2mjs } = require("csm2mjs");
+const { createCsm2MjsPlugin } = require("csm2mjs");
 
 function transformString(source, { minify = false, filename = "" } = {}) {
   return swc.transform(source, {
     filename,
     module: { type: "es6" },
-    minify,
+    minify: false,
     jsc: {
       parser: {
         syntax: "ecmascript",
       },
       target: "es2018",
-      transform: {
-        optimizer: {
-          globals: {
-            vars: {
-              "process.env.NODE_ENV": JSON.stringify("production"),
-            },
-          },
-        },
-      },
+      loose: false,
+      transform: {},
       minify: minify
         ? {
-            mangle: true,
-            toplevel: true,
-            ecma: 2022,
+            mangle: {},
+            compress: {},
           }
         : {},
     },
-    plugin: csm2mjs,
+    plugin: createCsm2MjsPlugin({}),
   });
 }
 
@@ -48,5 +41,5 @@ transform(filename, {
   minify: false,
 }).then((output) => {
   console.timeEnd("transform");
-  return writeFile("build/" + filename.split("/").pop(), output.code);
+  return writeFile("debug/" + filename.split("/").pop(), output.code);
 });

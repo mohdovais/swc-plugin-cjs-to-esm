@@ -1,6 +1,6 @@
 import { createFilter } from "@rollup/pluginutils";
 import { transform } from "@swc/core";
-import { csm2mjs } from "csm2mjs";
+import { createCsm2MjsPlugin } from "csm2mjs";
 import { excludeHelpers, mergeDeep } from "./utils";
 
 import type { Options, JscConfig, ParserConfig } from "@swc/core";
@@ -14,14 +14,18 @@ const jsxRe = /\.[jt]sx$/;
 function createSwcOptions(options: Options = {}): Options {
   const minify = options.minify === true;
   const defaults: Options = {
+    sourceMaps: true,
     jsc: {
       externalHelpers: true,
-      target: "es2018",
+      target: "es2022",
+      loose: false,
       transform: {
         react: {
           runtime: "automatic",
         },
         optimizer: {
+          //@ts-ignore
+          simplify: false,
           globals: {
             vars: {
               "process.env.NODE_ENV": JSON.stringify(
@@ -33,8 +37,8 @@ function createSwcOptions(options: Options = {}): Options {
       },
       minify: minify
         ? {
-            compress: {},
-            mangle: {},
+            compress: true,
+            mangle: true,
           }
         : {},
     },
@@ -70,7 +74,11 @@ function transformWithSwc(
   }
 
   options.filename = filename;
-  options.plugin = transformCommonJS ? csm2mjs : undefined;
+  options.plugin = transformCommonJS
+    ? createCsm2MjsPlugin({
+        replace: options.jsc?.transform?.optimizer?.globals?.vars,
+      })
+    : undefined;
 
   return transform(code, options);
 }
@@ -113,11 +121,13 @@ function swcPlugin(config: SwcPluginConfig = {}): Plugin {
 
       options.minify = false;
       if (options.jsc != null) {
-        options.jsc.minify = {};
+        options.jsc.minify = { compress: false, mangle: false  };
         options.jsc.externalHelpers = true;
       }
 
-      return await transformWithSwc(source, id, options, true);
+      const result = await transformWithSwc(source, id, options, true);
+
+      return result;
     },
 
     async renderChunk(
@@ -127,11 +137,9 @@ function swcPlugin(config: SwcPluginConfig = {}): Plugin {
     ) {
       if (minify) {
         const { fileName } = chunk;
-        const { sourcemap } = outputOptions;
 
         const options: Options = JSON.parse(JSON.stringify(swcOptions));
         options.minify = true;
-        options.sourceMaps = !!sourcemap;
         if (options.jsc != null) {
           options.jsc.externalHelpers = false;
           options.jsc.target = "es2022";
