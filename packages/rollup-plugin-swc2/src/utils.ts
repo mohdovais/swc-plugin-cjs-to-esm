@@ -1,4 +1,5 @@
-import { FilterPattern } from "@rollup/pluginutils";
+import type { FilterPattern } from "@rollup/pluginutils";
+import type { Options } from "@swc/core";
 import path from "path";
 
 function excludeHelpers(exclude?: FilterPattern) {
@@ -52,4 +53,41 @@ function mergeDeep<T extends Record<string, any>>(
   return mergeDeep(target, ...sources);
 }
 
-export { mergeDeep, excludeHelpers };
+function createSwcOptions(options: Options = {}): Options {
+  const minify = options.minify === true;
+  const defaults: Options = {
+    sourceMaps: true,
+    jsc: {
+      externalHelpers: true,
+      target: "es2022",
+      loose: false,
+      transform: {
+        react: {
+          runtime: "automatic",
+        },
+        optimizer: {
+          //@ts-ignore
+          simplify: false,
+          globals: {
+            vars: {
+              "process.env.NODE_ENV": JSON.stringify(
+                minify ? "production" : "development"
+              ),
+            },
+          },
+        },
+      },
+      minify: minify
+        ? {
+            compress: true,
+            mangle: true,
+          }
+        : {},
+    },
+  };
+
+  return mergeDeep(defaults, options);
+}
+
+
+export { mergeDeep, excludeHelpers, createSwcOptions };

@@ -1,5 +1,5 @@
 //@ts-check
-import { swcPlugin } from "rollup-plugin-swc";
+import { swcPlugin } from "rollup-plugin-swc2";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 
 export default {
@@ -7,7 +7,6 @@ export default {
   output: {
     dir: "test-builds/tsx",
     entryFileNames: "app.js",
-    //sourcemap: true,
     /**
      * @param {string} id
      */

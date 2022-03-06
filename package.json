@@ -5,7 +5,7 @@
   "scripts": {
     "build": "npm run build -workspaces --if-present",
     "pretest": "rm -rf test-builds & npm run build",
-    "test": "rollup -c test.config.js"
+    "test": "rollup -c tests/rollup.config.js"
   },
   "author": "Mohd Ovais",
   "license": "MIT",

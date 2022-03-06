@@ -1,6 +1,6 @@
 {
-  "name": "csm2mjs",
-  "version": "1.0.0",
+  "name": "swc-plugin-cjs2esm",
+  "version": "0.1.0",
   "description": "",
   "main": "dist/cjs/index.js",
   "module": "dist/mjs/index.js",

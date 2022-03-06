@@ -1,60 +1,15 @@
 import { createFilter } from "@rollup/pluginutils";
 import { transform } from "@swc/core";
-import { createCsm2MjsPlugin } from "csm2mjs";
-import { excludeHelpers, mergeDeep } from "./utils";
+import { createCsm2MjsPlugin } from "swc-plugin-cjs2esm";
+import { createSwcOptions, excludeHelpers, mergeDeep } from "./utils";
 
 import type { Options, JscConfig, ParserConfig } from "@swc/core";
 import type { FilterPattern } from "@rollup/pluginutils";
 import type { NormalizedOutputOptions, Plugin, RenderedChunk } from "rollup";
 
-const knownExtensions = ["js", "jsx", "ts", "tsx", "mjs", "cjs"];
-const tsRe = /\.tsx?$/;
-const jsxRe = /\.[jt]sx$/;
-
-function createSwcOptions(options: Options = {}): Options {
-  const minify = options.minify === true;
-  const defaults: Options = {
-    sourceMaps: true,
-    jsc: {
-      externalHelpers: true,
-      target: "es2022",
-      loose: false,
-      transform: {
-        react: {
-          runtime: "automatic",
-        },
-        optimizer: {
-          //@ts-ignore
-          simplify: false,
-          globals: {
-            vars: {
-              "process.env.NODE_ENV": JSON.stringify(
-                minify ? "production" : "development"
-              ),
-            },
-          },
-        },
-      },
-      minify: minify
-        ? {
-            compress: true,
-            mangle: true,
-          }
-        : {},
-    },
-  };
-
-  return mergeDeep(defaults, options);
-}
-
-interface SwcPluginConfig {
-  inlcude?: FilterPattern;
-  exclude?: FilterPattern;
-  minify?: boolean;
-  extensions?: string[];
-  jscConfig?: JscConfig;
-  replace?: Record<string, string>;
-}
+const defaultExtensions = ["js", "jsx", "ts", "tsx", "mjs", "cjs"];
+const tsRegExr = /\.tsx?$/;
+const jsxRegExr = /\.[jt]sx$/;
 
 function transformWithSwc(
   code: string,
@@ -62,8 +17,8 @@ function transformWithSwc(
   options: Options,
   transformCommonJS = false
 ) {
-  const isTypeScript = tsRe.test(filename);
-  const isJSX = jsxRe.test(filename);
+  const isTypeScript = tsRegExr.test(filename);
+  const isJSX = jsxRegExr.test(filename);
 
   const parser: ParserConfig = isTypeScript
     ? { syntax: "typescript", tsx: isJSX }
@@ -83,9 +38,19 @@ function transformWithSwc(
   return transform(code, options);
 }
 
+interface SwcPluginConfig {
+  inlcude?: FilterPattern;
+  exclude?: FilterPattern;
+  minify?: boolean;
+  extensions?: string[];
+  jscConfig?: JscConfig;
+  replace?: Record<string, string>;
+  commonjs?: boolean;
+}
+
 function swcPlugin(config: SwcPluginConfig = {}): Plugin {
   const {
-    extensions = knownExtensions,
+    extensions = defaultExtensions,
     exclude,
     inlcude,
     minify = false,

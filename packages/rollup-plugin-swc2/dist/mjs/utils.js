@@ -35,4 +35,36 @@ function mergeDeep(target, ...sources) {
     }
     return mergeDeep(target, ...sources);
 }
-export { mergeDeep, excludeHelpers };
+function createSwcOptions(options = {}) {
+    const minify = options.minify === true;
+    const defaults = {
+        sourceMaps: true,
+        jsc: {
+            externalHelpers: true,
+            target: "es2022",
+            loose: false,
+            transform: {
+                react: {
+                    runtime: "automatic",
+                },
+                optimizer: {
+                    //@ts-ignore
+                    simplify: false,
+                    globals: {
+                        vars: {
+                            "process.env.NODE_ENV": JSON.stringify(minify ? "production" : "development"),
+                        },
+                    },
+                },
+            },
+            minify: minify
+                ? {
+                    compress: true,
+                    mangle: true,
+                }
+                : {},
+        },
+    };
+    return mergeDeep(defaults, options);
+}
+export { mergeDeep, excludeHelpers, createSwcOptions };

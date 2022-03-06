@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.excludeHelpers = exports.mergeDeep = void 0;
+exports.createSwcOptions = exports.excludeHelpers = exports.mergeDeep = void 0;
 const path_1 = __importDefault(require("path"));
 function excludeHelpers(exclude) {
     const excludeArray = Array.isArray(exclude)
@@ -43,3 +43,36 @@ function mergeDeep(target, ...sources) {
     return mergeDeep(target, ...sources);
 }
 exports.mergeDeep = mergeDeep;
+function createSwcOptions(options = {}) {
+    const minify = options.minify === true;
+    const defaults = {
+        sourceMaps: true,
+        jsc: {
+            externalHelpers: true,
+            target: "es2022",
+            loose: false,
+            transform: {
+                react: {
+                    runtime: "automatic",
+                },
+                optimizer: {
+                    //@ts-ignore
+                    simplify: false,
+                    globals: {
+                        vars: {
+                            "process.env.NODE_ENV": JSON.stringify(minify ? "production" : "development"),
+                        },
+                    },
+                },
+            },
+            minify: minify
+                ? {
+                    compress: true,
+                    mangle: true,
+                }
+                : {},
+        },
+    };
+    return mergeDeep(defaults, options);
+}
+exports.createSwcOptions = createSwcOptions;

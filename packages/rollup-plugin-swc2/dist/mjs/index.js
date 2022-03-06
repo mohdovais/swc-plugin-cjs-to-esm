@@ -1,46 +1,14 @@
 import { createFilter } from "@rollup/pluginutils";
 import { transform } from "@swc/core";
-import { createCsm2MjsPlugin } from "csm2mjs";
-import { excludeHelpers, mergeDeep } from "./utils";
-const knownExtensions = ["js", "jsx", "ts", "tsx", "mjs", "cjs"];
-const tsRe = /\.tsx?$/;
-const jsxRe = /\.[jt]sx$/;
-function createSwcOptions(options = {}) {
-    const minify = options.minify === true;
-    const defaults = {
-        sourceMaps: true,
-        jsc: {
-            externalHelpers: true,
-            target: "es2022",
-            loose: false,
-            transform: {
-                react: {
-                    runtime: "automatic",
-                },
-                optimizer: {
-                    //@ts-ignore
-                    simplify: false,
-                    globals: {
-                        vars: {
-                            "process.env.NODE_ENV": JSON.stringify(minify ? "production" : "development"),
-                        },
-                    },
-                },
-            },
-            minify: minify
-                ? {
-                    compress: true,
-                    mangle: true,
-                }
-                : {},
-        },
-    };
-    return mergeDeep(defaults, options);
-}
+import { createCsm2MjsPlugin } from "swc-plugin-cjs2esm";
+import { createSwcOptions, excludeHelpers, mergeDeep } from "./utils";
+const defaultExtensions = ["js", "jsx", "ts", "tsx", "mjs", "cjs"];
+const tsRegExr = /\.tsx?$/;
+const jsxRegExr = /\.[jt]sx$/;
 function transformWithSwc(code, filename, options, transformCommonJS = false) {
     var _a, _b, _c, _d;
-    const isTypeScript = tsRe.test(filename);
-    const isJSX = jsxRe.test(filename);
+    const isTypeScript = tsRegExr.test(filename);
+    const isJSX = jsxRegExr.test(filename);
     const parser = isTypeScript
         ? { syntax: "typescript", tsx: isJSX }
         : { syntax: "ecmascript", jsx: isJSX };
@@ -56,7 +24,7 @@ function transformWithSwc(code, filename, options, transformCommonJS = false) {
     return transform(code, options);
 }
 function swcPlugin(config = {}) {
-    const { extensions = knownExtensions, exclude, inlcude, minify = false, replace = {}, jscConfig = {}, } = config;
+    const { extensions = defaultExtensions, exclude, inlcude, minify = false, replace = {}, jscConfig = {}, } = config;
     const rollupFilter = createFilter(inlcude, excludeHelpers(exclude));
     const extensionRegExp = new RegExp("\\.(" + extensions.join("|") + ")$");
     const filter = (id) => extensionRegExp.test(id) && rollupFilter(id);

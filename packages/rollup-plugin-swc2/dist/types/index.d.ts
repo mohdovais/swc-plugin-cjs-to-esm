@@ -8,6 +8,7 @@ interface SwcPluginConfig {
     extensions?: string[];
     jscConfig?: JscConfig;
     replace?: Record<string, string>;
+    commonjs?: boolean;
 }
 declare function swcPlugin(config?: SwcPluginConfig): Plugin;
 export { swcPlugin };

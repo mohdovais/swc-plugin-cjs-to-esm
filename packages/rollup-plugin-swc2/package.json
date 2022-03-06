@@ -1,6 +1,6 @@
 {
-  "name": "rollup-plugin-swc",
-  "version": "1.0.0",
+  "name": "rollup-plugin-swc2",
+  "version": "0.1.0",
   "description": "",
   "main": "dist/cjs/index.js",
   "module": "dist/mjs/index.js",
@@ -27,6 +27,6 @@
   },
   "dependencies": {
     "@rollup/pluginutils": "^4.1.2",
-    "csm2mjs": "file:../csm2mjs"
+    "swc-plugin-cjs2esm": "file:../swc-plugin-cjs2esm"
   }
 }
