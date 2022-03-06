@@ -5,3 +5,4 @@ transformed.js
 .DS_Store
 build
 test-builds
+dist
