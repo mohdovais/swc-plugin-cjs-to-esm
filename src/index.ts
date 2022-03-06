@@ -12,7 +12,7 @@ type Config = {
   replace?: ReplaceConfig["replace"];
 };
 
-function createCsm2MjsPlugin(config: Config) {
+function createCsm2MjsPlugin(config: Config = {}) {
   const { replace = {} } = config;
 
   return (program: Program): Program => {
